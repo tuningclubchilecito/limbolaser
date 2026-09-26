@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Configurador Limbo S3</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;600;800&display=swap');
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background: radial-gradient(circle at top, #1a1a1a 0%, #050505 100%); 
+            color: #f1f1f1; 
+            font-family: 'Inter', sans-serif; 
+            min-height: 100vh; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+            background: #111;
+            border: 1px solid #282828;
+            border-radius: 22px;
+            padding: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #222;
+            padding-bottom: 15px;
+            margin-bottom: 18px;
+        }
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: #ffcc00;
+            font-size: 20px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+        }
+        .header p { font-size: 12px; color: #888; margin-top: 4px; font-weight: 600; }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #1c1c1c;
+            border: 1px solid #333;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 10px;
+            color: #ff4757;
+        }
+        .status-badge.conectado {
+            color: #00e676;
+            border-color: #00e676;
+            background: rgba(0, 230, 118, 0.08);
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+
+        .section {
+            background: #171717;
+            border: 1px solid #252525;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            color: #00e5ff;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        button:active { transform: scale(0.97); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-bt { background: #2980b9; color: #fff; box-shadow: 0 4px 15px rgba(41, 128, 185, 0.4); }
+        .btn-scan { background: #8e44ad; color: #fff; }
+        .btn-save { background: #f1c40f; color: #000; }
+        .btn-ip { background: #16a085; color: #fff; }
+        .btn-go { background: #00e676; color: #000; margin-top: 8px; text-decoration: none; }
+        .btn-pub { background: #e67e22; color: #fff; margin-top: 5px; text-decoration: none; }
+
+        select, input {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            background: #0d0d0d;
+            border: 1px solid #333;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        input:focus, select:focus { outline: none; border-color: #00e5ff; }
+
+        .ip-box {
+            background: #080808;
+            border: 1px dashed #444;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .ip-label { font-size: 11px; color: #777; text-transform: uppercase; font-weight: 700; }
+        .ip-number { font-family: 'Orbitron', sans-serif; font-size: 24px; color: #00e5ff; font-weight: 900; margin-top: 4px; }
+
+        .console {
+            background: #050505;
+            border: 1px solid #222;
+            border-radius: 10px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #00e676;
+            height: 95px;
+            overflow-y: auto;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <h1>LIMBO LÁSER • S3</h1>
+        <p>Centro de Control Bluetooth & Red</p>
+        <div id="badgeEstado" class="status-badge">
+            <span class="dot"></span>
+            <span id="textoEstado">Bluetooth Desconectado</span>
+        </div>
+    </div>
+
+    <!-- PASO 1: VINCULAR BLUETOOTH -->
+    <div class="section">
+        <div class="section-title">1. Enlace con el Sensor</div>
+        <button id="btnConectar" class="btn-bt" onclick="conectarBLE()">
+            📡 VINCULAR BLUETOOTH (BLE)
+        </button>
+    </div>
+
+    <!-- PASO 2: CONFIGURAR WIFI -->
+    <div class="section">
+        <div class="section-title">2. Configurar Red WiFi</div>
+        <button id="btnScan" class="btn-scan" onclick="escanearRedes()" disabled>
+            🔍 BUSCAR REDES WIFI CERCANAS
+        </button>
+        
+        <select id="listaRedes" onchange="seleccionarRed()" disabled>
+            <option value="">-- Presiona buscar redes --</option>
+        </select>
+
+        <input type="text" id="inputSsid" placeholder="Nombre de la red WiFi (SSID)" disabled>
+        <input type="password" id="inputPass" placeholder="Contraseña del WiFi" disabled>
+
+        <button id="btnGuardarWifi" class="btn-save" onclick="guardarWifi()" disabled>
+            ⚡ GUARDAR Y CONECTAR WIFI
+        </button>
+    </div>
+
+    <!-- PASO 3: DIRECCIÓN IP Y ACCESO -->
+    <div class="section">
+        <div class="section-title">3. Estado de Red e IP</div>
+        <button id="btnIp" class="btn-ip" onclick="consultarIP()" disabled>
+            🌐 CONSULTAR IP ACTUAL
+        </button>
+
+        <div class="ip-box">
+            <div class="ip-label">Dirección IP del ESP32</div>
+            <div class="ip-number" id="textoIp">---.---.---.---</div>
+        </div>
+
+        <button id="btnAbrirOperador" class="btn-go" onclick="abrirUrl('/operador')" style="display:none;">
+            🎛️ ABRIR PANEL DE OPERADOR
+        </button>
+        <button id="btnAbrirPublico" class="btn-pub" onclick="abrirUrl('/public')" style="display:none;">
+            📺 ABRIR PANTALLA PÚBLICA
+        </button>
+    </div>
+
+    <!-- MONITOR DE RESPUESTAS -->
+    <div class="console" id="consola">
+        > Esperando conexión Bluetooth...
+    </div>
+</div>
+
+<script>
+    const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+    const CHAR_RX_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+    const CHAR_TX_UUID = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+
+    let dispositivoBLE = null;
+    let charRx = null;
+    let charTx = null;
+    let ipActual = "";
+    let bufferTexto = "";
+
+    function log(msj) {
+        const c = document.getElementById('consola');
+        c.innerHTML += "<br>> " + msj;
+        c.scrollTop = c.scrollHeight;
+    }
+
+    async function conectarBLE() {
+        try {
+            log("Buscando Limbo_Laser_S3...");
+            dispositivoBLE = await navigator.bluetooth.requestDevice({
+                filters: [{ namePrefix: 'Limbo' }],
+                optionalServices: [SERVICE_UUID]
+            });
+
+            dispositivoBLE.addEventListener('gattserverdisconnected', alDesconectar);
+            
+            log("Conectando al servidor GATT...");
+            const server = await dispositivoBLE.gatt.connect();
+            const service = await server.getPrimaryService(SERVICE_UUID);
+            
+            charRx = await service.getCharacteristic(CHAR_RX_UUID);
+            charTx = await service.getCharacteristic(CHAR_TX_UUID);
+
+            await charTx.startNotifications();
+            charTx.addEventListener('characteristicvaluechanged', recibirDatosBLE);
+
+            // Actualizar interfaz
+            document.getElementById('badgeEstado').classList.add('conectado');
+            document.getElementById('textoEstado').innerText = "Conectado a Limbo_Laser_S3";
+            document.getElementById('btnConectar').innerText = "✅ BLUETOOTH ENLAZADO";
+            
+            habilitarControles(true);
+            log("¡Enlace exitoso! Consultando IP...");
+            
+            // Consultar IP automáticamente al entrar
+            setTimeout(() => enviarComando("IP"), 600);
+
+        } catch (error) {
+            log("Error o cancelado: " + error.message);
+        }
+    }
+
+    function alDesconectar() {
+        document.getElementById('badgeEstado').classList.remove('conectado');
+        document.getElementById('textoEstado').innerText = "Bluetooth Desconectado";
+        document.getElementById('btnConectar').innerText = "📡 RECONECTAR BLUETOOTH";
+        habilitarControles(false);
+        log("El ESP32 se desconectó (o se está reiniciando).");
+    }
+
+    function habilitarControles(estado) {
+        document.getElementById('btnScan').disabled = !estado;
+        document.getElementById('listaRedes').disabled = !estado;
+        document.getElementById('inputSsid').disabled = !estado;
+        document.getElementById('inputPass').disabled = !estado;
+        document.getElementById('btnGuardarWifi').disabled = !estado;
+        document.getElementById('btnIp').disabled = !estado;
+    }
+
+    async function enviarComando(cmd) {
+        if (!charRx) return;
+        try {
+            const encoder = new TextEncoder();
+            await charRx.writeValue(encoder.encode(cmd + "\n"));
+        } catch (e) {
+            log("Error al enviar: " + e.message);
+        }
+    }
+
+    function recibirDatosBLE(event) {
+        const decoder = new TextDecoder('utf-8');
+        bufferTexto += decoder.decode(event.target.value);
+
+        let lineas = bufferTexto.split('\n');
+        bufferTexto = lineas.pop(); // Guardar fragmento incompleto si lo hay
+
+        lineas.forEach(linea => {
+            linea = linea.trim();
+            if (!linea) return;
+            log(linea);
+
+            // 1. Detectar si es una red WiFi del escaneo (Ej: "1: MiRed (-65dBm)")
+            let matchRed = linea.match(/^\d+:\s+(.+)\s+\((-\d+dBm)\)$/);
+            if (matchRed) {
+                let nombreRed = matchRed[1].trim();
+                let senal = matchRed[2];
+                let select = document.getElementById('listaRedes');
+                let opt = document.createElement('option');
+                opt.value = nombreRed;
+                opt.innerText = `📶 ${nombreRed} (${senal})`;
+                select.appendChild(opt);
+            }
+
+            // 2. Detectar si es la respuesta de la IP (Ej: "IP Actual: 192.168.1.40")
+            if (linea.startsWith("IP Actual:")) {
+                ipActual = linea.replace("IP Actual:", "").trim();
+                document.getElementById('textoIp').innerText = ipActual;
+                document.getElementById('btnAbrirOperador').style.display = "flex";
+                document.getElementById('btnAbrirPublico').style.display = "flex";
+            } else if (linea.includes("Sin conexion WiFi")) {
+                document.getElementById('textoIp').innerText = "SIN WIFI";
+                document.getElementById('btnAbrirOperador').style.display = "none";
+                document.getElementById('btnAbrirPublico').style.display = "none";
+            }
+        });
+    }
+
+    function escanearRedes() {
+        const select = document.getElementById('listaRedes');
+        select.innerHTML = '<option value="">-- Selecciona una red detectada --</option>';
+        log("Escaneando redes WiFi (espera 3 seg)...");
+        enviarComando("SCAN");
+    }
+
+    function seleccionarRed() {
+        const red = document.getElementById('listaRedes').value;
+        if (red) {
+            document.getElementById('inputSsid').value = red;
+            document.getElementById('inputPass').focus();
+        }
+    }
+
+    function guardarWifi() {
+        const ssid = document.getElementById('inputSsid').value.trim();
+        const pass = document.getElementById('inputPass').value.trim();
+        if (!ssid) return alert("Selecciona o escribe el nombre de la red WiFi.");
+        
+        log(`Enviando credenciales para: ${ssid}...`);
+        enviarComando(`WIFI:${ssid}:${pass}`);
+        alert("Credenciales enviadas. El ESP32 se reiniciará ahora para conectarse a la nueva red. Vuelve a vincular el Bluetooth en 5 segundos para ver tu nueva IP.");
+    }
+
+    function consultarIP() {
+        enviarComando("IP");
+    }
+
+    function abrirUrl(ruta) {
+        if (!ipActual) return;
+        window.open(`http://${ipActual}${ruta}`, '_blank');
+    }
+</script>
+
+</body>
+</html>
